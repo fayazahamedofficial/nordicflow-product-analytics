@@ -19,3 +19,15 @@
 - **What I found:** 10 out of ~400 users have a NULL job_role (out of 5 known values: sales_rep, sales_manager, revops, customer_success, admin)
 - **Why it matters:** Minor — likely normal missing data (e.g. optional field skipped at signup, or a system/service account), not a systemic issue
 - **Decision:** No fix needed now. If job_role is used in future analysis, treat NULLs as "unknown" or exclude depending on the specific question.
+## Issue 4: Test events present in `raw__product_events`, plus casing/naming inconsistency in `event_name`
+- **Found in:** `raw__product_events` table
+- **What I found:**
+  1. `event_name` has casing/naming inconsistencies — e.g. "login", "Login", "user_login" all represent the same event; "view_dashboard" and "ViewDashboard" likewise.
+  2. `is_test_event` flag shows 1,195 out of ~61,747 rows (~2%) are explicitly marked as test events.
+- **Why it matters:** Including test events or failing to standardize event names would inflate or distort activation/churn calculations, since these rely on counting specific "core action" events accurately.
+- **Fix applied:**
+  - Standardize `event_name` with LOWER() before matching against our core-action list
+  - Filter out all rows where `is_test_event = true` before any KPI calculation
+- **Bonus discovery:** Found a new event type, `invite_user`, not originally identified in our Step 2 core-action list. Added it as a core action — reasoning: inviting teammates signals team-wide CRM adoption, not just individual usage, which is a genuine value signal similar to creating deals or logging activities.
+- **Updated core actions list:** create_deal, log_activity, move_deal_stage, enable_automation, invite_user
+- **Updated non-core actions:** login (all variants), view_dashboard (all variants)
