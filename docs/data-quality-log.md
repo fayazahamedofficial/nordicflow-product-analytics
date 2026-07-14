@@ -31,3 +31,9 @@
 - **Bonus discovery:** Found a new event type, `invite_user`, not originally identified in our Step 2 core-action list. Added it as a core action — reasoning: inviting teammates signals team-wide CRM adoption, not just individual usage, which is a genuine value signal similar to creating deals or logging activities.
 - **Updated core actions list:** create_deal, log_activity, move_deal_stage, enable_automation, invite_user
 - **Updated non-core actions:** login (all variants), view_dashboard (all variants)
+## Issue 5: Dataset contains future-dated timestamps (synthetic data artifact)
+- **Found in:** `raw__users.created_at` (and likely other date columns across tables)
+- **What I found:** 343 out of ~400 users have signup dates later than the real-world current date (July 2026), with dates spreading out to as late as December 2029. This is a synthetic data generation artifact — the fictional Nordicflow dataset was likely generated with randomized dates that don't validate against a real "today."
+- **Why it matters:** Using the real-world calendar date as "today" would make most of the dataset appear "too early to judge" for any time-windowed KPI (activation, churn), making the project unusable.
+- **Decision made:** Anchor all "as of" reporting date logic to the MAX date found in the dataset itself (2029-12-30), rather than the real-world current date. This is treated as the dataset's own internal "today" for all time-window calculations going forward.
+- **How I found it:** Compared COUNT of users where created_at > CURRENT_DATE against total user count; confirmed by checking MAX(created_at) across the dataset.
