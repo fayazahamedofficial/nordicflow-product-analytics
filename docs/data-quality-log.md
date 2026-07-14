@@ -37,3 +37,10 @@
 - **Why it matters:** Using the real-world calendar date as "today" would make most of the dataset appear "too early to judge" for any time-windowed KPI (activation, churn), making the project unusable.
 - **Decision made:** Anchor all "as of" reporting date logic to the MAX date found in the dataset itself (2029-12-30), rather than the real-world current date. This is treated as the dataset's own internal "today" for all time-window calculations going forward.
 - **How I found it:** Compared COUNT of users where created_at > CURRENT_DATE against total user count; confirmed by checking MAX(created_at) across the dataset.
+## Issue 6: Events with timestamps before user signup (major synthetic data flaw)
+- **Found in:** `raw__product_events.event_timestamp` compared against `raw__users.created_at`
+- **What I found:** ~27,341 out of ~60,552 non-test events (roughly 45%) had an event_timestamp earlier than the user's own signup date - logically impossible, since a user cannot perform an action before their account exists.
+- **Why it matters:** This directly corrupts activation logic (comparing first core action to signup date) and would corrupt any other event-based analysis (churn, engagement) if left unfiltered.
+- **How I found it:** While building the activation query, noticed a user whose "first core action" predated their signup by years. Verified at scale with a JOIN comparing event_timestamp to created_at.
+- **Fix applied:** Added `event_timestamp >= created_at` filter directly in `bronze__product_events`, so every downstream query automatically inherits this fix rather than needing to reapply it.
+- **Root cause (likely):** Synthetic data generator created user signup dates and event timestamps independently, without enforcing that events occur after signup.
