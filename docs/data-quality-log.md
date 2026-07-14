@@ -14,3 +14,8 @@
 - **Decision made:** Treat "churned" and "cancelled" together as one "ended" group representing Nordicflow's official account status, kept separate from our own custom behavioral churn definition (30+ days inactivity post-activation, from the metrics dictionary). This gives us two independent signals to compare later, rather than forcing one definition.
 - **Fix applied:** Standardize casing with LOWER() (same as the deals status fix) before any grouping or filtering.
 - **Follow-up idea:** Potential original analysis (Step 9) — check whether our behavioral churn signal predicts accounts that later show official churned/cancelled status.
+## Observation 3: Minor nulls in `raw__users.job_role`
+- **Found in:** `raw__users` table, `job_role` column
+- **What I found:** 10 out of ~400 users have a NULL job_role (out of 5 known values: sales_rep, sales_manager, revops, customer_success, admin)
+- **Why it matters:** Minor — likely normal missing data (e.g. optional field skipped at signup, or a system/service account), not a systemic issue
+- **Decision:** No fix needed now. If job_role is used in future analysis, treat NULLs as "unknown" or exclude depending on the specific question.
