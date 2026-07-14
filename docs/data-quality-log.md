@@ -44,3 +44,7 @@
 - **How I found it:** While building the activation query, noticed a user whose "first core action" predated their signup by years. Verified at scale with a JOIN comparing event_timestamp to created_at.
 - **Fix applied:** Added `event_timestamp >= created_at` filter directly in `bronze__product_events`, so every downstream query automatically inherits this fix rather than needing to reapply it.
 - **Root cause (likely):** Synthetic data generator created user signup dates and event timestamps independently, without enforcing that events occur after signup.
+## Issue 7: Churn logic initially measured lifetime silence instead of early-stage silence
+- **What I found:** My first churn query checked for 30+ day gaps across a user's entire event history, without restricting to their first 90 days. This produced an unrealistic 87.9% churn rate among activated users.
+- **Why it happened:** Users with longer histories (some spanning 3+ years) have more opportunities to show a random 30-day quiet gap at some point, unrelated to early-stage disengagement - this isn't a data issue, it's a query logic issue.
+- **Fix applied:** Restricted the gap-detection window to only events within 90 days of each user's own signup date, matching the actual KPI definition ("within their first 90 days"). This brought the churn rate down to a more realistic ~43%.
