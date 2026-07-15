@@ -48,3 +48,8 @@
 - **What I found:** My first churn query checked for 30+ day gaps across a user's entire event history, without restricting to their first 90 days. This produced an unrealistic 87.9% churn rate among activated users.
 - **Why it happened:** Users with longer histories (some spanning 3+ years) have more opportunities to show a random 30-day quiet gap at some point, unrelated to early-stage disengagement - this isn't a data issue, it's a query logic issue.
 - **Fix applied:** Restricted the gap-detection window to only events within 90 days of each user's own signup date, matching the actual KPI definition ("within their first 90 days"). This brought the churn rate down to a more realistic ~43%.
+## Issue 8: Geography reference data - casing, whitespace, and duplicate row
+- **Found in:** raw__geography (loaded from external Excel file)
+- **What I found:** country_code had inconsistent casing (e.g. 'de' instead of 'DE'), trailing whitespace (e.g. 'NL '), and one fully duplicated row (France).
+- **Why it matters:** Would silently break joins against bronze__deals.country_code and bronze__product_events.country_code, since exact string matching would fail on mismatched case/whitespace.
+- **Fix applied:** UPPER(TRIM(country_code)) plus DISTINCT to remove the duplicate row.
