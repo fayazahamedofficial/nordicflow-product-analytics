@@ -1,9 +1,11 @@
--- Gold layer: user engagement summary
--- One row per user, combining activation status, churn status, and raw
--- engagement metrics (total actions, recency, breadth of feature usage).
--- Purpose: supports Step 9 extended analysis - comparing engagement patterns
--- against churn/activation outcomes at a single-row-per-user grain, rather
--- than requiring repeated joins across silver views and raw events.
+-- Gold layer: user engagement summary (ORIGINAL TABLE - beyond tutorial scope)
+-- One row per user, combining activation status, churn status, raw engagement
+-- metrics, and account attributes (industry, segment, employee_band).
+--
+-- UPDATE: added industry/segment/employee_band directly onto this table
+-- (joined from dim_accounts) rather than creating a separate dim_users <->
+-- dim_accounts relationship in Power BI, which would have caused an ambiguous
+-- relationship path conflict with the existing fact_deals -> dim_accounts link.
 
 CREATE OR REPLACE TABLE fact_user_engagement_summary AS
 WITH engagement_stats AS (
@@ -21,6 +23,9 @@ WITH engagement_stats AS (
 SELECT
     u.user_id,
     u.account_id,
+    acc.industry,
+    acc.segment,
+    acc.employee_band,
     a.is_activated,
     ch.is_churned,
     e.total_core_actions,
@@ -29,6 +34,7 @@ SELECT
     e.last_core_action_at,
     e.days_since_last_core_action
 FROM dim_users u
+LEFT JOIN dim_accounts acc ON u.account_id = acc.account_id
 LEFT JOIN silver__user_activation a ON u.user_id = a.user_id
 LEFT JOIN silver__user_churn ch ON u.user_id = ch.user_id
 LEFT JOIN engagement_stats e ON u.user_id = e.user_id;
